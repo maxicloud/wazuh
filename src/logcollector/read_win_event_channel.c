@@ -540,7 +540,7 @@ int win_start_event_channel(char *evt_log, char future, char *query, int reconne
         goto cleanup;
     }
 
-    channel->evt_log = evt_log;
+    os_strdup(evt_log, channel->evt_log);
     channel->reconnect_time = reconnect_time;
 
     /* Create copy of event log string */
