@@ -17,7 +17,7 @@ from xml.dom.minidom import parseString
 
 from wazuh.core import common
 from wazuh.core.exception import WazuhInternalError, WazuhError
-from wazuh.core.ossec_socket import OssecSocket
+from wazuh.core.wazuh_socket import OssecSocket
 from wazuh.core.results import WazuhResult
 from wazuh.core.utils import cut_array, load_wazuh_xml, safe_move
 
@@ -43,8 +43,14 @@ conf_sections = {
     'alerts': {'type': 'merge', 'list_options': []},
     'client': {'type': 'merge', 'list_options': []},
     'database_output': {'type': 'merge', 'list_options': []},
-    'email_alerts': {'type': 'merge', 'list_options': []},
-    'reports': {'type': 'merge', 'list_options': []},
+    'email_alerts': {
+        'type': 'merge',
+        'list_options': ['email_to']
+    },
+    'reports': {
+        'type': 'merge',
+        'list_options': ['email_to']
+    },
     'global': {
         'type': 'merge',
         'list_options': ['white_list']
@@ -55,7 +61,7 @@ conf_sections = {
     },
     'cis-cat': {
         'type': 'merge',
-        'list_options': []
+        'list_options': ['content']
     },
     'syscollector': {
         'type': 'merge',
@@ -90,7 +96,7 @@ conf_sections = {
     },
     'osquery': {
         'type': 'merge',
-        'list_options': []
+        'list_options': ['pack']
     },
     'labels': {
         'type': 'duplicate',

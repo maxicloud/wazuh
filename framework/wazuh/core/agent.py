@@ -23,7 +23,7 @@ from wazuh.core.cluster.utils import get_manager_status
 from wazuh.core.database import Connection
 from wazuh.core.exception import WazuhException, WazuhError, WazuhInternalError
 from wazuh.core.ossec_queue import OssecQueue
-from wazuh.core.ossec_socket import OssecSocket, OssecSocketJSON
+from wazuh.core.wazuh_socket import OssecSocket, OssecSocketJSON
 from wazuh.core.utils import chmod_r, WazuhVersion, plain_dict_to_nested_dict, get_fields_to_nest, WazuhDBQuery, \
     WazuhDBQueryDistinct, WazuhDBQueryGroupBy, SQLiteBackend, WazuhDBBackend, safe_move
 
@@ -104,7 +104,7 @@ class WazuhDBQueryAgents(WazuhDBQuery):
         return super()._format_data_into_dictionary()
 
     def _parse_legacy_filters(self):
-        if 'older_than' in self.legacy_filters:
+        if 'older_than' in self.legacy_filters and self.legacy_filters['older_than'] != '0s':
             if self.legacy_filters['older_than']:
                 self.q = (self.q + ';' if self.q else '') + \
                           "(lastKeepAlive>{0};status!=never_connected,dateAdd>{0};status=never_connected)".format(

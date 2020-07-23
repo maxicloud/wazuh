@@ -392,8 +392,8 @@ class Handler(asyncio.Protocol):
             self.logger.error("Unhandled error processing request '{}': {}".format(command, e), exc_info=True)
             command, payload = b'err', json.dumps(exception.WazuhInternalError(1000, extra_message=str(e)),
                                                   cls=WazuhJSONEncoder).encode()
-
-        self.push(self.msg_build(command, counter, payload))
+        if command is not None:
+            self.push(self.msg_build(command, counter, payload))
 
     def close(self):
         """

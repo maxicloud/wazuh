@@ -9,7 +9,7 @@ from typing import Tuple, Union
 import uvloop
 
 from wazuh.core import common
-from wazuh.core.cluster import common as c_common, server, client
+from wazuh.core.cluster import common as c_common, server, client, local_client
 from wazuh.core.cluster.dapi import dapi
 from wazuh.core.cluster.utils import context_tag
 from wazuh.core.exception import WazuhClusterError
@@ -179,7 +179,7 @@ class LocalServerHandlerMaster(LocalServerHandler):
                     self.server.node.clients[node_name].send_request(b'dapi', self.name.encode() + b' ' + request))
                 return b'ok', b'Request forwarded to worker node'
             else:
-                raise WazuhClusterError(3022, extra_message=node_name)
+                raise WazuhClusterError(3022)
         else:
             return super().process_request(command, data)
 
@@ -239,7 +239,7 @@ class LocalServerHandlerWorker(LocalServerHandler):
         :param data: Received payload
         :return: A response
         """
-        #modify logger filter tag in LocalServerHandlerWorker entry point
+        # modify logger filter tag in LocalServerHandlerWorker entry point
         context_tag.set("Local " + self.name)
 
         self.logger.debug2("Command received: {}".format(command))
@@ -248,6 +248,8 @@ class LocalServerHandlerWorker(LocalServerHandler):
                 raise WazuhClusterError(3023)
             asyncio.create_task(self.server.node.client.send_request(b'dapi', self.name.encode() + b' ' + data))
             return b'ok', b'Added request to API requests queue'
+        elif command == b'send_sync':
+            return self.send_sync(data)
         else:
             return super().process_request(command, data)
 
@@ -291,6 +293,18 @@ class LocalServerHandlerWorker(LocalServerHandler):
         send_res = asyncio.create_task(self.send_request(command=b'dapi_res' if in_command == b'dapi' else b'control_res',
                                                          data=future.result()))
         send_res.add_done_callback(self.send_res_callback)
+
+    def send_sync(self, payload):
+        lc = local_client.LocalClient()
+        req = asyncio.create_task(lc.execute(command=b'dapi', data=payload, wait_for_complete=False))
+        req.add_done_callback(functools.partial(self.get_send_sync_response, self.name))
+
+        return None, None
+
+    def get_send_sync_response(self, name, future):
+        result = future.result()
+        msg_counter = self.next_counter()
+        self.server.clients[name].push(self.msg_build(b'send_sync', msg_counter, result.encode()))
 
     def send_file_request(self, path, node_name):
         """
