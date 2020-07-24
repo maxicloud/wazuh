@@ -91,6 +91,6 @@ void SyscollectorInit(void);
 void CiscatInit(void);
 void WinevtInit(void);
 void SecurityConfigurationAssessmentInit(void);
-int ReadDecodeXML(const char *file);
+int ReadDecodeXML(const char *file, OSDecoderNode **decoderlist_pn,  OSDecoderNode **decoderlist_nopn);
 
 #endif /* DECODER_H */

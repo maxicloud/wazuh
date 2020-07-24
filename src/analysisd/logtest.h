@@ -9,6 +9,7 @@
 
 #include "shared.h"
 #include "rules.h"
+#include "config.h"
 #include "decoders/decoder.h"
 #include "eventinfo.h"
 #include "../config/logtest-config.h"
@@ -29,6 +30,12 @@ typedef struct w_logtest_session_t {
     ListNode *cdblistnode;                  ///< List of CDB lists
     ListRule *cdblistrule;                  ///< List to attach rules and CDB lists
     EventList *eventlist;                   ///< Previous events list
+    OSHash *g_rules_hash;                   ///< Hash table of rules
+    OSList *fts_list;                       ///< Save FTS previous events
+    OSHash *fts_store;                      ///< Save FTS values processed
+    OSHash *acm_store;                      ///< Hash to save data which have the same id
+    int acm_lookups;                        ///< Counter of the number of times purged. Option accumulate
+    time_t acm_purge_ts;                    ///< Counter of the time interval of last purge. Option accumulate
 
 } w_logtest_session_t;
 
@@ -69,22 +76,22 @@ int w_logtest_init_parameters();
 void *w_logtest_main(w_logtest_connection * connection);
 
 /**
- * @brief Create resources necessary to service client
- * @param fd File descriptor which represents the client
- */
-void w_logtest_initialize_session(int token);
-
-/**
  * @brief Process client's request
  * @param fd File descriptor which represents the client
  */
 void w_logtest_process_log(int token);
 
 /**
+ * @brief Create resources necessary to service client
+ * @param fd File descriptor which represents the client
+ */
+w_logtest_session_t *w_logtest_initialize_session(int token, char **msg_error);
+
+/**
  * @brief Free resources after client closes connection
  * @param fd File descriptor which represents the client
  */
-void w_logtest_remove_session(int token);
+void w_logtest_remove_session(w_logtest_session_t *session);
 
 /**
  * @brief Check the active log-test sessions

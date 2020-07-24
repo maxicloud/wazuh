@@ -148,7 +148,7 @@ static int ReadDecodeAttrs(char *const *names, char *const *values)
     return (AFTER_ERROR);
 }
 
-int ReadDecodeXML(const char *file)
+int ReadDecodeXML(const char *file, OSDecoderNode **decoderlist_pn,  OSDecoderNode **decoderlist_nopn)
 {
     OS_XML xml;
     XML_NODE node = NULL;
@@ -756,7 +756,7 @@ int ReadDecodeXML(const char *file)
         }
 
         /* Add osdecoder to the list */
-        if (!OS_AddOSDecoder(pi, &os_analysisd_decoderlist_pn, &os_analysisd_decoderlist_nopn)) {
+        if (!OS_AddOSDecoder(pi, decoderlist_pn, decoderlist_nopn)) {
             merror(DECODER_ERROR);
             goto cleanup;
         }

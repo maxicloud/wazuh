@@ -531,7 +531,7 @@ int main_analysisd(int argc, char **argv)
                     if (!test_config) {
                         mdebug1("Reading decoder file %s.", *decodersfiles);
                     }
-                    if (!ReadDecodeXML(*decodersfiles)) {
+                    if (!ReadDecodeXML(*decodersfiles, &os_analysisd_decoderlist_pn, &os_analysisd_decoderlist_nopn)) {
                         merror_exit(CONFIG_ERROR, *decodersfiles);
                     }
 

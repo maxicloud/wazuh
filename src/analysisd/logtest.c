@@ -102,18 +102,137 @@ void *w_logtest_main(w_logtest_connection *connection) {
 }
 
 
-void w_logtest_initialize_session(int token) {
-
-}
-
-
 void w_logtest_process_log(int token) {
 
 }
 
 
-void w_logtest_remove_session(int token) {
 
+w_logtest_session_t *w_logtest_initialize_session(int token, char **msg_error) {
+
+    w_logtest_session_t *session;
+
+    session->token = token;
+    session->last_connection = 0;
+
+    /* Create list to save previous events */
+    os_calloc(1, sizeof(EventList), session->eventlist);
+    OS_CreateEventList(Config.memorysize, session->eventlist);
+
+    /* Load decoders */
+    session->decoderlist_forpname = NULL;
+    session->decoderlist_nopname = NULL;
+
+    char **decodersfiles = Config.decoders;
+
+    while (decodersfiles && *decodersfiles) {
+        if (!ReadDecodeXML(*decodersfiles, &session->decoderlist_forpname, &session->decoderlist_nopname)) {
+            return NULL;
+        }
+
+        os_free(*decodersfiles);
+        decodersfiles++;
+    }
+
+    /* Load CDB list */
+    session->cdblistnode = NULL;
+    session->cdblistrule = NULL;
+
+    char **listfiles = Config.lists;
+
+    while (listfiles && *listfiles) {
+        if (Lists_OP_LoadList(*listfiles, &session->cdblistnode) < 0) {
+            return NULL;
+        }
+        os_free(*listfiles);
+        listfiles++;
+    }
+
+    Lists_OP_MakeAll(0, 0, &session->cdblistnode);
+
+    /* Load rules */
+    session->rule_list = NULL;
+
+    char **rulesfiles = Config.includes;
+
+    while (rulesfiles && *rulesfiles) {
+        if (Rules_OP_ReadRules(*rulesfiles, &session->rule_list, &session->cdblistnode) < 0) {
+            return NULL;
+        }
+
+        os_free(*rulesfiles);
+        rulesfiles++;
+    }
+
+    /* Associate rules and CDB lists */
+    OS_ListLoadRules(&session->cdblistnode, &session->cdblistrule);
+
+    /* _setlevels */
+
+
+    /* Creating rule hash */
+    if (session->g_rules_hash = OSHash_Create(), !session->g_rules_hash) {
+        return NULL;
+    }
+
+    AddHash_Rule(session->rule_list);
+
+    /* Initiate the FTS list */
+    session->fts_list = NULL;
+
+
+    /* Initialize the Accumulator */
+
+
+
+    return session;
+}
+
+/*
+
+typedef struct w_logtest_session_t {
+
+    int token;                              ///< Client ID
+    time_t last_connection;                 ///< Timestamp of the last query
+
+    RuleNode *rule_list;                    ///< Rule list
+    OSDecoderNode *decoderlist_forpname;    ///< Decoder list to match logs which have a program name
+    OSDecoderNode *decoderlist_nopname;     ///< Decoder list to match logs which haven't a program name
+    ListNode *cdblistnode;                  ///< List of CDB lists
+    ListRule *cdblistrule;                  ///< List to attach rules and CDB lists
+    EventList *eventlist;                   ///< Previous events list
+    OSHash *g_rules_hash;                   ///< Hash table of rules
+    OSList *fts_list;                       ///< Save FTS previous events
+    OSHash *fts_store;                      ///< Save FTS values processed
+    OSHash *acm_store;                      ///< Hash to save data which have the same id
+    int acm_lookups;                        ///< Counter of the number of times purged. Option accumulate
+    time_t acm_purge_ts;                    ///< Counter of the time interval of last purge. Option accumulate
+
+} w_logtest_session_t;
+*/
+
+void w_logtest_remove_session(w_logtest_session_t *session) {
+
+    /* Remove rule list and rule hash */
+
+    OSHash_Free(session->g_rules_hash);
+
+    /* Remove decoder list */
+
+
+    /* Remove cdblistnode and cdblistrule */
+
+
+    /* Remove list of previous events */
+
+
+    /* Remove fts list and hash */
+
+    OSHash_Free(session->fts_store);
+
+    /* Remove accumulator hash */
+
+    OSHash_Free(session->acm_lookups);
 }
 
 
